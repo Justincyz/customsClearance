@@ -11,7 +11,7 @@ def initializeCustomsClearanceTable():
     cursor = connect.cursor()
 
     sql = "CREATE TABLE IF NOT EXISTS CustomsClearance (\
-                  MBLNumber VARCHAR(20),\
+                  MBLNumber VARCHAR(100),\
                   FileName VARCHAR(200) NOT NULL,\
                   ChineseName VARCHAR(100) NOT NULL,\
                   EnglishName VARCHAR(100),\

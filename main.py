@@ -10,12 +10,14 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 headerName = ["No.", "ChineseName", "EnglishName", "Quantity", "UnitPrice", "TotalPrice", "HSCode", "Material",
               "UseFor"]
 ignorableFile = ('.WeDrive')
+debugAddress = r'C:\Users\yuzhuangchen\Desktop\errorFile'
+globalPath = r"C:\Users\yuzhuangchen\Documents\WXWork\1688858301406791\WeDrive\飞客国际\清关转运"
+
 
 def main():
-    retrieveTopKInfo = 100
+    retrieveTopKInfo = 200
     databaseConnection.initializeCustomsClearanceTable()
-    globalPath = r"C:\Users\yuzhuangchen\Documents\WXWork\1688858301406791\WeDrive\飞客国际\清关转运"
-    for dirpath, dirnames, filenames in os.walk(globalPath):
+    for dirpath, dirnames, filenames in os.walk(debugAddress):
         for filename in filenames:
             if isIgnorableFile(filename):
                 continue
@@ -27,7 +29,10 @@ def main():
                 sys.exit(0)
 
 
+    print("Finished!")
 def isIgnorableFile(filename):
+    if filename.startswith('~') or filename.startswith('.'):
+        return True
     if re.match(r'.*实际申报.*', filename) or re.match(r'.*客户确认.*', filename):
         return False
     return True
@@ -135,17 +140,22 @@ def getMBLNumber(dirpath, filename):
                                     usecols="A:K")
     for row in currentXlsxData.index:
         key = currentXlsxData.loc[row]
-        # if filename == '实际申报-发票装箱单-FFAU1263350.xlsx':
-        #     print(key)
         if type(key[0]) != str:
             continue
         if re.match(r'.*(B/L|MBL|BL).*', key[0]):
             for r in range(1, len(currentXlsxData.values[row])):
                 if not pd.isnull(currentXlsxData.values[row][r]):
-                    MBLNumber = currentXlsxData.values[row][r]
+                    draftMBLNumber = str(currentXlsxData.values[row][r])
+                    draftMBLNumberSplit = draftMBLNumber.split('：')
+                    print(draftMBLNumber)
+                    if len(draftMBLNumberSplit) > 1: #means extra sentence that seperated by ':'
+                        MBLNumber = draftMBLNumberSplit[1]
+                    else:
+                        MBLNumber = draftMBLNumber
                     break
             if MBLNumber is not None:
                 break
-    return MBLNumber
+    print(MBLNumber)
+    return str(MBLNumber)
 
 main()
