@@ -10,25 +10,25 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 headerName = ["No.", "ChineseName", "EnglishName", "Quantity", "UnitPrice", "TotalPrice", "HSCode", "Material",
               "UseFor"]
 ignorableFile = ('.WeDrive')
-debugAddress = r'C:\Users\yuzhuangchen\Desktop\errorFile'
-globalPath = r"C:\Users\yuzhuangchen\Documents\WXWork\1688858301406791\WeDrive\飞客国际\清关转运"
+debugPath = r'C:\Users\yuzhuangchen\Desktop\errorFile'
+workPath = r"C:\Users\yuzhuangchen\Documents\WXWork\1688858301406791\WeDrive\飞客国际\清关转运"
 
 
 def main():
     retrieveTopKInfo = 200
     databaseConnection.initializeCustomsClearanceTable()
-    for dirpath, dirnames, filenames in os.walk(debugAddress):
+    for dirpath, dirnames, filenames in os.walk(workPath):
         for filename in filenames:
             if isIgnorableFile(filename):
                 continue
             processingFile(dirpath, filename)
-            retrieveTopKInfo = retrieveTopKInfo - 1
-            if retrieveTopKInfo < 0:
-                databaseConnection.closeDbConnection()
-                print("Finished!")
-                sys.exit(0)
+            # retrieveTopKInfo = retrieveTopKInfo - 1
+            # if retrieveTopKInfo < 0:
+            #     databaseConnection.closeDbConnection()
+            #     print("Finished!")
+            #     sys.exit(0)
 
-
+    databaseConnection.closeDbConnection()
     print("Finished!")
 def isIgnorableFile(filename):
     if filename.startswith('~') or filename.startswith('.'):
@@ -41,8 +41,19 @@ def isIgnorableFile(filename):
 def processingFile(dirpath, filename):
     print(filename)
     nameOfSequence = ('序号\nNo.', '单号\nNo.')
+
+    #找到<发票>这一表格
+    currentXlsxData = pd.read_excel(os.path.join(dirpath, filename),sheet_name=None)
+    commercialInvoiceSheet = 0
+
+    # 发票表单有可能用英文也可能用中文表达，同时也不能确定在第几个sheet里面
+    for i in range(len(list(currentXlsxData))):
+        if re.match(r'.*(发票|Commercial Invoice).*', list(currentXlsxData)[i]):
+            commercialInvoiceSheet = i
+            break
+
     currentXlsxData = pd.read_excel(os.path.join(dirpath, filename),
-                                    sheet_name=0,
+                                    sheet_name=commercialInvoiceSheet,
                                     usecols="A:K")
 
     # get the correct header information offset
@@ -59,7 +70,8 @@ def processingFile(dirpath, filename):
     for row in currentXlsxData.index:
         key = currentXlsxData.loc[row]
         # found the line with the header information
-        if key[0] in nameOfSequence:
+
+        if type(key[0]) is str and re.match(r'.*(序号|单号).*', key[0]):
             headerInfoOffset = row
             for header in currentXlsxData.values[row]:
                 if pd.isnull(header):
@@ -107,7 +119,13 @@ def processingFile(dirpath, filename):
         # only retrieve useful data
         key = currentXlsxData.loc[row]
         MBLNumber = getMBLNumber(dirpath, filename)
+        # means this file is not complete yet, since 10
+        if headerChineseName == None:
+            break
         ChineseName = str(key[headerChineseName])
+
+        if headerEnglishName == None:
+            break
         EnglishName = str(key[headerEnglishName])
         Quantity = str(key[headerQuantity])
         UnitPrice = str(key[headerUnitPrice])
@@ -146,8 +164,8 @@ def getMBLNumber(dirpath, filename):
             for r in range(1, len(currentXlsxData.values[row])):
                 if not pd.isnull(currentXlsxData.values[row][r]):
                     draftMBLNumber = str(currentXlsxData.values[row][r])
-                    draftMBLNumberSplit = draftMBLNumber.split('：')
-                    print(draftMBLNumber)
+                    draftMBLNumberSplit = re.split('：|:', draftMBLNumber)
+
                     if len(draftMBLNumberSplit) > 1: #means extra sentence that seperated by ':'
                         MBLNumber = draftMBLNumberSplit[1]
                     else:
@@ -155,7 +173,7 @@ def getMBLNumber(dirpath, filename):
                     break
             if MBLNumber is not None:
                 break
-    print(MBLNumber)
+
     return str(MBLNumber)
 
 main()
