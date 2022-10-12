@@ -33,6 +33,8 @@ def main():
 def isIgnorableFile(filename):
     if filename.startswith('~') or filename.startswith('.'):
         return True
+    if filename.endswith('xls') or filename.endswith('xlsx'):
+        return False
     if re.match(r'.*实际申报.*', filename) or re.match(r'.*客户确认.*', filename):
         return False
     return True
