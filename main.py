@@ -10,14 +10,17 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 headerName = ["No.", "ChineseName", "EnglishName", "Quantity", "UnitPrice", "TotalPrice", "HSCode", "Material",
               "UseFor"]
 ignorableFile = ('.WeDrive')
-debugPath = r'C:\Users\yuzhuangchen\Desktop\errorFile'
-workPath = r"C:\Users\yuzhuangchen\Documents\WXWork\1688858301406791\WeDrive\飞客国际\清关转运"
+windowsDebugPath = r'C:\Users\yuzhuangchen\Desktop\errorFile'
+windowsWorkPath = r"C:\Users\yuzhuangchen\Documents\WXWork\1688858301406791\WeDrive\飞客国际\清关转运"
 
+macDebugPath = r'/Users/yuzhuangchen/desktop/errorFile'
+macWorkPath = r'/Users/yuzhuangchen/desktop/errorFile'
 
 def main():
     retrieveTopKInfo = 200
     databaseConnection.initializeCustomsClearanceTable()
-    for dirpath, dirnames, filenames in os.walk(workPath):
+
+    for dirpath, dirnames, filenames in os.walk(macDebugPath):
         for filename in filenames:
             if isIgnorableFile(filename):
                 continue
@@ -162,7 +165,7 @@ def getMBLNumber(dirpath, filename):
         key = currentXlsxData.loc[row]
         if type(key[0]) != str:
             continue
-        if re.match(r'.*(B/L|MBL|BL).*', key[0]):
+        if re.match(r'.*(B/L|MBL|BL|BilL).*', key[0]):
             for r in range(1, len(currentXlsxData.values[row])):
                 if not pd.isnull(currentXlsxData.values[row][r]):
                     draftMBLNumber = str(currentXlsxData.values[row][r])
